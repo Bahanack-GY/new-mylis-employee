@@ -550,6 +550,7 @@
   "demands": {
     "title": "Demandes",
     "subtitle": "Soumettez et suivez vos demandes de ressources",
+    "chatIntroMessage": "Conversation démarrée pour votre demande de : {{items}}",
     "newDemand": "Nouvelle demande",
     "empty": "Aucune demande pour le moment",
     "emptyHint": "Créez votre première demande pour commencer",

@@ -15,6 +15,7 @@ import {
     ArrowLeft,
     Menu,
     Reply,
+    Package,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -85,6 +86,104 @@ function scrollToMessage(messageId: string) {
         setTimeout(() => el.classList.remove('bg-yellow-50'), 1500);
     }
 }
+
+const DEMAND_CARD_RE = /^\[DEMAND_CARD:(.+)\]$/s;
+
+const formatFCFA = (amount: number) =>
+    new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
+
+const IMPORTANCE_LABELS: Record<string, { label: string; color: string }> = {
+    BARELY: { label: 'Faible', color: 'bg-gray-100 text-gray-500' },
+    IMPORTANT: { label: 'Important', color: 'bg-blue-50 text-blue-600' },
+    VERY_IMPORTANT: { label: 'Très important', color: 'bg-orange-50 text-orange-600' },
+    URGENT: { label: 'Urgent', color: 'bg-red-50 text-red-600' },
+};
+
+/* ─── Demand Card Bubble ───────────────────────────────── */
+
+interface DemandCardData {
+    demandId: string;
+    items: { name: string; quantity: number; unitPrice: number }[];
+    totalPrice: number;
+    importance: string;
+    status: string;
+}
+
+const DemandCardBubble = ({
+    data,
+    messageTime,
+    showName,
+    senderName,
+    isOwn,
+}: {
+    data: DemandCardData;
+    messageTime: string;
+    showName: boolean;
+    senderName: string;
+    isOwn: boolean;
+}) => {
+    const { t } = useTranslation();
+    const isPending = data.status === 'PENDING';
+    const imp = IMPORTANCE_LABELS[data.importance] || IMPORTANCE_LABELS.BARELY;
+
+    return (
+        <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} px-5 py-1`}>
+            {showName && (
+                <div className="flex items-baseline gap-2 mb-1">
+                    {!isOwn && <span className="text-sm font-semibold text-gray-800">{senderName}</span>}
+                    <span className="text-[10px] text-gray-400">{formatTime(messageTime)}</span>
+                    {isOwn && <span className="text-sm font-semibold text-[#33cbcc]">Vous</span>}
+                </div>
+            )}
+            <div className={`max-w-[85%] w-full sm:max-w-[420px] ${!isOwn ? 'ml-12' : ''}`}>
+                <div className="bg-gradient-to-br from-[#283852] to-[#1e2d42] rounded-2xl overflow-hidden shadow-lg">
+                    {/* Header */}
+                    <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+                        <Package size={16} className="text-[#33cbcc]" />
+                        <span className="text-sm font-semibold text-white">{t('demands.chatIntroMessage', { items: '' }).replace(': ', '')}</span>
+                        <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${imp.color}`}>{imp.label}</span>
+                    </div>
+
+                    {/* Items table */}
+                    <div className="px-4 pb-2">
+                        <div className="bg-white/10 rounded-lg overflow-hidden">
+                            {data.items.map((item, i) => (
+                                <div key={i} className={`flex items-center justify-between px-3 py-1.5 text-xs ${i > 0 ? 'border-t border-white/10' : ''}`}>
+                                    <span className="text-white/90 font-medium flex-1 truncate">{item.name}</span>
+                                    <span className="text-white/60 mx-3">×{item.quantity}</span>
+                                    <span className="text-white/80 font-medium">{formatFCFA(item.unitPrice * item.quantity)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Total */}
+                    <div className="px-4 pb-3 flex justify-between items-center">
+                        <span className="text-[10px] text-white/50 uppercase tracking-wider font-bold">Total</span>
+                        <span className="text-sm font-bold text-[#33cbcc]">{formatFCFA(data.totalPrice)}</span>
+                    </div>
+
+                    {/* Status badge */}
+                    <div className="px-4 pb-3">
+                        {isPending ? (
+                            <div className="text-center text-xs font-bold py-1.5 rounded-lg text-[#f59e0b] bg-[#f59e0b]/15">
+                                • {t('demands.status.pending')}
+                            </div>
+                        ) : (
+                            <div className={`text-center text-xs font-bold py-1.5 rounded-lg ${
+                                data.status === 'VALIDATED'
+                                    ? 'text-green-400 bg-green-500/15'
+                                    : 'text-red-400 bg-red-500/15'
+                            }`}>
+                                {data.status === 'VALIDATED' ? '✓ ' + t('demands.status.validated') : '✗ ' + t('demands.status.rejected')}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 /* ─── New DM Modal ─────────────────────────────────────── */
 
@@ -390,6 +489,25 @@ const MessageBubble = ({
             </div>
         </button>
     ) : null;
+
+    // Detect demand card messages
+    const demandMatch = message.content.match(DEMAND_CARD_RE);
+    if (demandMatch) {
+        try {
+            const data: DemandCardData = JSON.parse(demandMatch[1]);
+            return (
+                <DemandCardBubble
+                    data={data}
+                    messageTime={message.createdAt}
+                    showName={showAvatar}
+                    senderName={`${message.sender.firstName} ${message.sender.lastName}`}
+                    isOwn={isOwn}
+                />
+            );
+        } catch {
+            // If JSON parse fails, fall through to normal rendering
+        }
+    }
 
     if (isOwn) {
         return (

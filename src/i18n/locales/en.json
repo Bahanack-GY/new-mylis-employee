@@ -550,6 +550,7 @@
   "demands": {
     "title": "Demands",
     "subtitle": "Submit and track your resource requests",
+    "chatIntroMessage": "Conversation started for your demand: {{items}}",
     "newDemand": "New Demand",
     "empty": "No demands yet",
     "emptyHint": "Create your first demand to get started",
