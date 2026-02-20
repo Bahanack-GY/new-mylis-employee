@@ -10,6 +10,7 @@
     "sanctions": "Sanctions",
     "notifications": "Notifications",
     "messages": "Messages",
+    "demands": "Demands",
     "profile": "Profile",
     "logout": "Logout"
   },
@@ -544,6 +545,45 @@
       "title": "New Badge Unlocked!",
       "milestone": "{{count}} tasks completed",
       "awesome": "Awesome!"
+    }
+  },
+  "demands": {
+    "title": "Demands",
+    "subtitle": "Submit and track your resource requests",
+    "newDemand": "New Demand",
+    "empty": "No demands yet",
+    "emptyHint": "Create your first demand to get started",
+    "items": "items",
+    "moreItems": "more",
+    "total": "Total",
+    "proforma": "Proforma",
+    "importance": {
+      "barely": "Low priority",
+      "important": "Important",
+      "very_important": "Very important",
+      "urgent": "Urgent"
+    },
+    "status": {
+      "pending": "Pending",
+      "validated": "Validated",
+      "rejected": "Rejected"
+    },
+    "create": {
+      "title": "New Demand",
+      "items": "Items",
+      "addItem": "Add item",
+      "itemName": "Item",
+      "itemNamePlaceholder": "Item name...",
+      "quantity": "Qty",
+      "unitPrice": "Price (FCFA)",
+      "total": "Total",
+      "proforma": "Proforma (justification)",
+      "uploadProforma": "Upload proforma (PDF or image)",
+      "proformaFormats": "PDF, PNG, JPG",
+      "importance": "Priority",
+      "addImage": "Add image",
+      "cancel": "Cancel",
+      "submit": "Submit Demand"
     }
   }
 }

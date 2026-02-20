@@ -10,6 +10,7 @@
     "sanctions": "Sanctions",
     "notifications": "Notifications",
     "messages": "Messages",
+    "demands": "Demandes",
     "profile": "Profil",
     "logout": "Déconnexion"
   },
@@ -544,6 +545,45 @@
       "title": "Nouveau badge débloqué !",
       "milestone": "{{count}} tâches complétées",
       "awesome": "Génial !"
+    }
+  },
+  "demands": {
+    "title": "Demandes",
+    "subtitle": "Soumettez et suivez vos demandes de ressources",
+    "newDemand": "Nouvelle demande",
+    "empty": "Aucune demande pour le moment",
+    "emptyHint": "Créez votre première demande pour commencer",
+    "items": "articles",
+    "moreItems": "de plus",
+    "total": "Total",
+    "proforma": "Proforma",
+    "importance": {
+      "barely": "Peu important",
+      "important": "Important",
+      "very_important": "Très important",
+      "urgent": "Urgent"
+    },
+    "status": {
+      "pending": "En attente",
+      "validated": "Validée",
+      "rejected": "Rejetée"
+    },
+    "create": {
+      "title": "Nouvelle demande",
+      "items": "Articles",
+      "addItem": "Ajouter un article",
+      "itemName": "Article",
+      "itemNamePlaceholder": "Nom de l'article...",
+      "quantity": "Qté",
+      "unitPrice": "Prix (FCFA)",
+      "total": "Total",
+      "proforma": "Proforma (justificatif)",
+      "uploadProforma": "Téléverser un proforma (PDF ou image)",
+      "proformaFormats": "PDF, PNG, JPG",
+      "importance": "Priorité",
+      "addImage": "Ajouter une image",
+      "cancel": "Annuler",
+      "submit": "Soumettre la demande"
     }
   }
 }

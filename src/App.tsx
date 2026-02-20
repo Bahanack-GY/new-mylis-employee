@@ -14,6 +14,7 @@ import Formations from "./pages/Formations"
 import Sanctions from "./pages/Sanctions"
 import Notifications from "./pages/Notifications"
 import Messages from "./pages/Messages"
+import Demands from "./pages/Demands"
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           <Route path="/formations" element={<Formations />} />
           <Route path="/sanctions" element={<Sanctions />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/demands" element={<Demands />} />
         </Route>
         <Route path="/messages" element={<Messages />} />
       </Route>

@@ -10,6 +10,7 @@ import {
     GraduationCap,
     AlertTriangle,
     MessageSquare,
+    HandCoins,
     LogOut,
     ChevronLeft,
     ChevronRight,
@@ -35,6 +36,7 @@ const menuItems = [
     { icon: FileText, label: 'documents', path: '/documents' },
     { icon: GraduationCap, label: 'formations', path: '/formations' },
     { icon: AlertTriangle, label: 'sanctions', path: '/sanctions' },
+    { icon: HandCoins, label: 'demands', path: '/demands' },
     { icon: MessageSquare, label: 'messages', path: '/messages' },
 ];
 
