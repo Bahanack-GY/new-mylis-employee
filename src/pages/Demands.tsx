@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,6 +8,8 @@ import {
     Clock,
     CheckCircle,
     XCircle,
+    Search,
+    Filter,
     Loader2,
     Trash2,
     FileText,
@@ -366,10 +368,40 @@ const CreateDemandModal = ({ onClose }: { onClose: () => void }) => {
 
 /* ─── Main Component ────────────────────────────────────── */
 
+const STATUS_TABS: ('ALL' | DemandStatusKey)[] = ['ALL', 'PENDING', 'VALIDATED', 'REJECTED'];
+
 const Demands = () => {
     const { t } = useTranslation();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const { data: demands = [], isLoading } = useMyDemands();
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'ALL' | DemandStatusKey>('ALL');
+    const [importanceFilter, setImportanceFilter] = useState<DemandImportance | ''>('');
+
+    const filteredDemands = useMemo(() => {
+        let result = demands as Demand[];
+
+        // Search – match against item names
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter((d) =>
+                d.items?.some((item) => item.name.toLowerCase().includes(q))
+            );
+        }
+
+        // Status filter
+        if (statusFilter !== 'ALL') {
+            result = result.filter((d) => d.status === statusFilter);
+        }
+
+        // Importance filter
+        if (importanceFilter) {
+            result = result.filter((d) => d.importance === importanceFilter);
+        }
+
+        return result;
+    }, [demands, searchQuery, statusFilter, importanceFilter]);
 
     if (isLoading) {
         return (
@@ -380,7 +412,7 @@ const Demands = () => {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -396,16 +428,95 @@ const Demands = () => {
                 </button>
             </div>
 
+            {/* Search & Filters */}
+            <div className="flex flex-col md:flex-row gap-4">
+                {/* Search */}
+                <div className="flex-1 bg-white rounded-2xl p-2 flex items-center border border-gray-100 shadow-sm focus-within:ring-2 focus-within:ring-[#33cbcc]/20 transition-shadow">
+                    <Search className="text-gray-400 ml-3" size={20} />
+                    <input
+                        type="text"
+                        placeholder={t('demands.searchPlaceholder', 'Search demands...')}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-transparent border-none focus:ring-0 text-gray-700 placeholder-gray-400 px-3 text-sm"
+                    />
+                    {searchQuery && (
+                        <button onClick={() => setSearchQuery('')} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition-colors mr-1">
+                            <X size={16} />
+                        </button>
+                    )}
+                </div>
+
+                {/* Importance filter */}
+                <div className="relative">
+                    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                    <select
+                        value={importanceFilter}
+                        onChange={(e) => setImportanceFilter(e.target.value as DemandImportance | '')}
+                        className="bg-white rounded-2xl p-3 pl-10 pr-8 border border-gray-100 shadow-sm min-w-44 text-sm text-gray-600 appearance-none cursor-pointer hover:border-[#33cbcc]/30 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/20 transition-all"
+                    >
+                        <option value="">{t('demands.allImportance', 'All importance')}</option>
+                        {IMPORTANCE_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>{t(`demands.importance.${opt.toLowerCase()}`)}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {(searchQuery || importanceFilter || statusFilter !== 'ALL') && (
+                    <button
+                        onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); setImportanceFilter(''); }}
+                        className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm hover:bg-red-50 hover:border-red-200 text-gray-400 hover:text-red-500 transition-colors"
+                        title={t('demands.clearFilters', 'Clear all filters')}
+                    >
+                        <X size={20} />
+                    </button>
+                )}
+            </div>
+
+            {/* Status Tabs */}
+            <div className="flex gap-2 flex-wrap">
+                {STATUS_TABS.map((tab) => {
+                    const isActive = statusFilter === tab;
+                    const count = tab === 'ALL'
+                        ? demands.length
+                        : (demands as Demand[]).filter((d) => d.status === tab).length;
+                    return (
+                        <button
+                            key={tab}
+                            onClick={() => setStatusFilter(tab)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                                isActive
+                                    ? 'bg-[#33cbcc] text-white shadow-sm'
+                                    : 'bg-white text-gray-500 border border-gray-100 hover:border-[#33cbcc]/30'
+                            }`}
+                        >
+                            {tab === 'ALL' ? t('demands.filterAll', 'All') : t(`demands.status.${tab.toLowerCase()}`)}
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                {count}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+
             {/* Demands List */}
-            {demands.length === 0 ? (
+            {filteredDemands.length === 0 ? (
                 <div className="text-center py-16">
                     <HandCoins size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500 font-medium">{t('demands.empty')}</p>
-                    <p className="text-gray-400 text-sm mt-1">{t('demands.emptyHint')}</p>
+                    <p className="text-gray-500 font-medium">
+                        {searchQuery || statusFilter !== 'ALL' || importanceFilter
+                            ? t('demands.noResults', 'No demands match your filters')
+                            : t('demands.empty')}
+                    </p>
+                    <p className="text-gray-400 text-sm mt-1">
+                        {searchQuery || statusFilter !== 'ALL' || importanceFilter
+                            ? t('demands.tryDifferentFilter', 'Try adjusting your search or filters')
+                            : t('demands.emptyHint')}
+                    </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {demands.map((demand: Demand, i: number) => {
+                    {filteredDemands.map((demand: Demand, i: number) => {
                         const StatusIcon = STATUS_ICON[demand.status as DemandStatusKey];
                         const itemCount = demand.items?.length || 0;
                         const firstItem = demand.items?.[0]?.name || '—';

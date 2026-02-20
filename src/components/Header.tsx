@@ -2,12 +2,16 @@ import { Search, Bell, Mail, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../api/notifications/hooks';
 import logo from '../assets/Logo.png';
 
 const Header = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { user: profile } = useAuth();
+    const { data: notifications = [] } = useNotifications();
+
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     const toggleLanguage = () => {
         i18n.changeLanguage(i18n.language === 'en' ? 'fr' : 'en');
@@ -58,6 +62,11 @@ const Header = () => {
                         className="relative p-2 hover:bg-gray-50 rounded-full transition-colors text-gray-500"
                     >
                         <Bell size={20} />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
                     </button>
                     <button
                         onClick={() => navigate('/messages')}
@@ -93,3 +102,4 @@ const Header = () => {
 };
 
 export default Header;
+

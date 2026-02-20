@@ -16,4 +16,7 @@ export const authApi = {
 
     getMyBadges: () =>
         api.get<EmployeeBadge[]>('/auth/my-badges').then(r => r.data),
+
+    markFirstLoginDone: () =>
+        api.patch('/auth/first-login-done').then(r => r.data),
 };

@@ -26,6 +26,7 @@ export interface UserProfile {
     userId: string;
     email: string;
     role: Role;
+    firstLogin: boolean;
     departmentId: string | null;
     employeeId: string | null;
     firstName: string;
