@@ -547,6 +547,20 @@
       "awesome": "Awesome!"
     }
   },
+  "browserNotifications": {
+    "task": "New Task",
+    "project": "New Project",
+    "system": "System Notification",
+    "document": "New Document",
+    "sanction": "New Sanction",
+    "demand": "Demand Update",
+    "message": "New Message",
+    "ticket": "Ticket Update",
+    "meeting": "New Meeting",
+    "chat": "New Message",
+    "permissionTitle": "Enable Notifications",
+    "permissionBody": "Get real-time alerts for tasks, projects and messages"
+  },
   "demands": {
     "title": "Demands",
     "subtitle": "Submit and track your resource requests",

@@ -547,6 +547,20 @@
       "awesome": "Génial !"
     }
   },
+  "browserNotifications": {
+    "task": "Nouvelle tache",
+    "project": "Nouveau projet",
+    "system": "Notification systeme",
+    "document": "Nouveau document",
+    "sanction": "Nouvelle sanction",
+    "demand": "Mise a jour de demande",
+    "message": "Nouveau message",
+    "ticket": "Mise a jour de ticket",
+    "meeting": "Nouvelle reunion",
+    "chat": "Nouveau message",
+    "permissionTitle": "Activer les notifications",
+    "permissionBody": "Recevez des alertes en temps reel pour les taches, projets et messages"
+  },
   "demands": {
     "title": "Demandes",
     "subtitle": "Soumettez et suivez vos demandes de ressources",

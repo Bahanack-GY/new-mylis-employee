@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../api/auth/api';
 import { employeesApi, type BirthdayEmployee } from '../api/employees/api';
+import { useBrowserNotifications } from '../hooks/useBrowserNotifications';
 
 /* ─── Welcome Modal ───────────────────────────────────── */
 
@@ -168,6 +169,9 @@ const DashboardLayout = () => {
     const [showWelcome, setShowWelcome] = useState(false);
     const [birthdayPeople, setBirthdayPeople] = useState<BirthdayEmployee[]>([]);
     const [showBirthday, setShowBirthday] = useState(false);
+
+    // Browser notifications
+    useBrowserNotifications();
 
     // Welcome modal: show on first login
     useEffect(() => {
