@@ -24,7 +24,7 @@ import {
     Image as ImageIcon,
     Eye,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import Header from '../components/Header';
@@ -321,12 +321,14 @@ const ChannelSidebar = ({
     onSelect,
     onNewDM,
     onlineUsers,
+    isEmbed = false,
 }: {
     channels: Channel[];
     activeChannelId: string | null;
     onSelect: (id: string) => void;
     onNewDM: () => void;
     onlineUsers: Set<string>;
+    isEmbed?: boolean;
 }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -387,16 +389,18 @@ const ChannelSidebar = ({
 
     return (
         <div className="w-64 bg-[#283852] flex flex-col h-full shrink-0 shadow-2xl z-50">
-            {/* Back button */}
-            <div className="px-4 pt-4 pb-2">
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
-                >
-                    <ArrowLeft size={16} />
-                    <span className="font-medium">Retour</span>
-                </button>
-            </div>
+            {/* Back button — hidden in embed mode */}
+            {!isEmbed && (
+                <div className="px-4 pt-4 pb-2">
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm"
+                    >
+                        <ArrowLeft size={16} />
+                        <span className="font-medium">Retour</span>
+                    </button>
+                </div>
+            )}
 
             {/* Title + New DM */}
             <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-700/50 shrink-0">
@@ -914,6 +918,8 @@ const MembersPanel = ({
 const Messages = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
+    const location = useLocation();
+    const isEmbed = location.pathname.startsWith('/embed/');
     const { onlineUsers, socket } = useSocket();
     const { data: channels, isLoading: channelsLoading } = useChannels();
     const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
@@ -1151,6 +1157,7 @@ const Messages = () => {
                     }}
                     onNewDM={() => setShowNewDM(true)}
                     onlineUsers={onlineUsers}
+                    isEmbed={isEmbed}
                 />
             </div>
 
@@ -1182,6 +1189,7 @@ const Messages = () => {
                                 }}
                                 onNewDM={() => { setShowNewDM(true); setShowChannelSidebar(false); }}
                                 onlineUsers={onlineUsers}
+                                isEmbed={isEmbed}
                             />
                         </motion.div>
                     </>
@@ -1190,7 +1198,7 @@ const Messages = () => {
 
             {/* Right side: Header + Chat area */}
             <div className="flex-1 flex flex-col overflow-hidden relative">
-                <Header />
+                {!isEmbed && <Header />}
 
                 <main className="flex-1 flex overflow-hidden bg-white">
                     {/* Main Chat Area */}
