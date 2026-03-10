@@ -14,6 +14,8 @@ import {
     Play,
     Ban,
     CalendarDays,
+    Plus,
+    Zap,
 } from 'lucide-react';
 import {
     DndContext,
@@ -29,7 +31,7 @@ import {
     type DragEndEvent,
     type DragOverEvent,
 } from '@dnd-kit/core';
-import { useMyTasks, useUpdateTaskState } from '../api/tasks/hooks';
+import { useMyTasks, useUpdateTaskState, useSelfAssignTask } from '../api/tasks/hooks';
 import type { Task, TaskState, TaskDifficulty, GamificationResult } from '../api/tasks/types';
 import PointsEarnedModal from '../components/PointsEarnedModal';
 import BadgeEarnedModal from '../components/BadgeEarnedModal';
@@ -52,6 +54,7 @@ interface MappedTask {
     projectName: string;
     projectId: string;
     blockReason: string;
+    selfAssigned: boolean;
 }
 
 /* ─── State mapping ──────────────────────────────────────── */
@@ -200,9 +203,16 @@ const KanbanCard = ({
         >
             {/* Title + project */}
             <div className="mb-2">
-                <h3 className="text-sm font-bold text-gray-800 truncate pr-6 group-hover:text-[#283852] transition-colors">
-                    {task.title}
-                </h3>
+                <div className="flex items-start justify-between gap-1">
+                    <h3 className="text-sm font-bold text-gray-800 truncate group-hover:text-[#283852] transition-colors">
+                        {task.title}
+                    </h3>
+                    {task.selfAssigned && (
+                        <span className="shrink-0 flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[#33cbcc]/10 text-[#33cbcc]">
+                            <Zap size={9} />
+                        </span>
+                    )}
+                </div>
                 {task.projectName && (
                     <p className="text-xs text-gray-400 mt-0.5 truncate">{task.projectName}</p>
                 )}
@@ -548,6 +558,185 @@ const TaskDetailModal = ({
     );
 };
 
+/* ─── Self-Assign Modal ──────────────────────────────────── */
+
+const DIFFICULTY_OPTIONS: TaskDifficulty[] = ['EASY', 'MEDIUM', 'HARD'];
+
+const SelfAssignModal = ({ onClose }: { onClose: () => void }) => {
+    const { t } = useTranslation();
+    const selfAssign = useSelfAssignTask();
+
+    const [form, setForm] = useState({
+        title: '',
+        description: '',
+        difficulty: 'MEDIUM' as TaskDifficulty,
+        startDate: '',
+        dueDate: '',
+    });
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handler);
+        document.body.style.overflow = 'hidden';
+        return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
+    }, [onClose]);
+
+    const update = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
+        setForm(prev => ({ ...prev, [key]: value }));
+
+    const isValid = form.title.trim().length > 0;
+
+    const difficultyColors: Record<TaskDifficulty, string> = {
+        EASY: 'border-[#33cbcc] bg-[#33cbcc]/10 text-[#33cbcc]',
+        MEDIUM: 'border-[#283852] bg-[#283852]/10 text-[#283852]',
+        HARD: 'border-red-400 bg-red-50 text-red-500',
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#33cbcc]/10 flex items-center justify-center">
+                            <Zap size={18} className="text-[#33cbcc]" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-800">{t('tasks.selfAssign.modalTitle')}</h3>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="px-6 py-5 space-y-4">
+                    {/* Title */}
+                    <div>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                            {t('tasks.selfAssign.titleLabel')}
+                        </label>
+                        <input
+                            type="text"
+                            value={form.title}
+                            onChange={e => update('title', e.target.value)}
+                            placeholder={t('tasks.selfAssign.titlePlaceholder')}
+                            autoFocus
+                            className="w-full bg-white rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/30 focus:border-[#33cbcc] transition-all"
+                        />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                            {t('tasks.selfAssign.descriptionLabel')}
+                        </label>
+                        <textarea
+                            value={form.description}
+                            onChange={e => update('description', e.target.value)}
+                            placeholder={t('tasks.selfAssign.descriptionPlaceholder')}
+                            rows={3}
+                            className="w-full bg-white rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/30 focus:border-[#33cbcc] transition-all resize-none"
+                        />
+                    </div>
+
+                    {/* Difficulty */}
+                    <div>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                            {t('tasks.selfAssign.difficultyLabel')}
+                        </label>
+                        <div className="flex gap-2">
+                            {DIFFICULTY_OPTIONS.map(d => (
+                                <button
+                                    key={d}
+                                    type="button"
+                                    onClick={() => update('difficulty', d)}
+                                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${
+                                        form.difficulty === d
+                                            ? difficultyColors[d]
+                                            : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'
+                                    }`}
+                                >
+                                    {d}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Start date + Due date */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                                <Calendar size={10} />
+                                {t('tasks.selfAssign.startDateLabel')}
+                            </label>
+                            <input
+                                type="date"
+                                value={form.startDate}
+                                onChange={e => update('startDate', e.target.value)}
+                                className="w-full bg-white rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/30 focus:border-[#33cbcc] transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                                <Calendar size={10} />
+                                {t('tasks.selfAssign.dueDateLabel')}
+                            </label>
+                            <input
+                                type="date"
+                                value={form.dueDate}
+                                onChange={e => update('dueDate', e.target.value)}
+                                className="w-full bg-white rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/30 focus:border-[#33cbcc] transition-all"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                    >
+                        {t('tasks.selfAssign.cancel')}
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (!isValid) return;
+                            selfAssign.mutate({
+                                title: form.title,
+                                description: form.description || undefined,
+                                difficulty: form.difficulty,
+                                startDate: form.startDate || undefined,
+                                dueDate: form.dueDate || undefined,
+                            }, { onSuccess: () => onClose() });
+                        }}
+                        disabled={!isValid || selfAssign.isPending}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors shadow-lg shadow-[#33cbcc]/20 ${
+                            isValid ? 'bg-[#33cbcc] hover:bg-[#2bb5b6]' : 'bg-gray-300 cursor-not-allowed shadow-none'
+                        }`}
+                    >
+                        {selfAssign.isPending ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                        {t('tasks.selfAssign.submit')}
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
+
 /* ═══════════════════════════════════════════════════════════ */
 /*  Main Component                                           */
 /* ═══════════════════════════════════════════════════════════ */
@@ -561,6 +750,7 @@ const Tasks = () => {
     const [customTo, setCustomTo] = useState('');
     const [showCustomPicker, setShowCustomPicker] = useState(false);
     const customPickerRef = useRef<HTMLDivElement>(null);
+    const [showSelfAssign, setShowSelfAssign] = useState(false);
     const [selectedTask, setSelectedTask] = useState<MappedTask | null>(null);
     const [activeDragTask, setActiveDragTask] = useState<MappedTask | null>(null);
     const [overColumnId, setOverColumnId] = useState<MappedStatus | null>(null);
@@ -594,6 +784,7 @@ const Tasks = () => {
                 projectName: t.project?.name || '',
                 projectId: t.projectId || '',
                 blockReason: t.blockReason || '',
+                selfAssigned: t.selfAssigned || false,
             })),
         [apiTasks],
     );
@@ -703,9 +894,18 @@ const Tasks = () => {
     return (
         <div className="space-y-6 md:space-y-8">
             {/* ═══ Page header ═══ */}
-            <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t('tasks.title')}</h1>
-                <p className="text-gray-500 mt-1">{t('tasks.subtitle')}</p>
+            <div className="flex items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{t('tasks.title')}</h1>
+                    <p className="text-gray-500 mt-1">{t('tasks.subtitle')}</p>
+                </div>
+                <button
+                    onClick={() => setShowSelfAssign(true)}
+                    className="flex items-center gap-2 bg-[#33cbcc] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2bb5b6] transition-colors shadow-lg shadow-[#33cbcc]/20 shrink-0"
+                >
+                    <Plus size={16} />
+                    {t('tasks.selfAssign.createButton')}
+                </button>
             </div>
 
             {/* ═══ Stats ═══ */}
@@ -890,6 +1090,13 @@ const Tasks = () => {
                             );
                         }}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Self-Assign Modal */}
+            <AnimatePresence>
+                {showSelfAssign && (
+                    <SelfAssignModal onClose={() => setShowSelfAssign(false)} />
                 )}
             </AnimatePresence>
 

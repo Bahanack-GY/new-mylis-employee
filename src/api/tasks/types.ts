@@ -13,12 +13,22 @@ export interface Task {
     startTime?: string;
     endTime?: string;
     blockReason?: string;
+    selfAssigned?: boolean;
     assignedToId: string;
     assignedToTeamId: string;
     projectId: string;
     assignedTo?: { id: string; firstName: string; lastName: string; avatarUrl: string };
     assignedToTeam?: { id: string; name: string };
     project?: { id: string; name: string };
+}
+
+export interface SelfAssignTaskDto {
+    title: string;
+    description?: string;
+    difficulty?: TaskDifficulty;
+    dueDate?: string;
+    startDate?: string;
+    endDate?: string;
 }
 
 export interface GamificationResult {

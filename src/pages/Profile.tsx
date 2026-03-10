@@ -108,13 +108,14 @@ const EditProfileModal = ({
 }: {
     profile: ProfileData;
     onClose: () => void;
-    onSave: (data: { firstName: string; lastName: string; phoneNumber: string; birthDate: string; address: string; skills: string[] }) => void;
+    onSave: (data: { firstName: string; lastName: string; email: string; phoneNumber: string; birthDate: string; address: string; skills: string[] }) => void;
     isSaving: boolean;
 }) => {
     const { t } = useTranslation();
     const [form, setForm] = useState({
         firstName: profile.firstName,
         lastName: profile.lastName,
+        email: profile.email,
         phone: profile.phone,
         dateOfBirth: profile.dateOfBirth,
         location: profile.location,
@@ -181,6 +182,19 @@ const EditProfileModal = ({
                                 className={inputCls}
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className={labelCls}>
+                            <Mail size={12} />
+                            {t('profile.contact.email')}
+                        </label>
+                        <input
+                            type="email"
+                            value={form.email}
+                            onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
+                            className={inputCls}
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -294,6 +308,7 @@ const EditProfileModal = ({
                         onClick={() => onSave({
                             firstName: form.firstName,
                             lastName: form.lastName,
+                            email: form.email,
                             phoneNumber: form.phone,
                             birthDate: form.dateOfBirth,
                             address: form.location,
@@ -557,7 +572,7 @@ const Profile = () => {
         skills: user?.skills || [],
     };
 
-    const handleSave = (data: { firstName: string; lastName: string; phoneNumber: string; birthDate: string; address: string; skills: string[] }) => {
+    const handleSave = (data: { firstName: string; lastName: string; email: string; phoneNumber: string; birthDate: string; address: string; skills: string[] }) => {
         updateProfile.mutate(data, {
             onSuccess: () => setShowEditModal(false),
         });

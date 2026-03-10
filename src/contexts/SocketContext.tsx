@@ -40,10 +40,12 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
         const newSocket = io(apiUrl, {
             auth: { token },
-            transports: ['websocket', 'polling'],
+            transports: ['websocket'],
+            upgrade: false,
             reconnection: true,
             reconnectionDelay: 1000,
-            reconnectionAttempts: 10,
+            reconnectionDelayMax: 10000,
+            reconnectionAttempts: Infinity,
         });
 
         setSocket(newSocket);

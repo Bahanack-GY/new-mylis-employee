@@ -1,5 +1,5 @@
 import api from '../config';
-import type { Task, TaskUpdateResponse } from './types';
+import type { Task, TaskUpdateResponse, SelfAssignTaskDto } from './types';
 
 export const tasksApi = {
     getMyTasks: () =>
@@ -10,4 +10,7 @@ export const tasksApi = {
 
     updateState: (taskId: string, state: string, blockReason?: string) =>
         api.patch<TaskUpdateResponse>(`/tasks/update-state/${taskId}`, { state, blockReason }).then(r => r.data),
+
+    selfAssign: (dto: SelfAssignTaskDto) =>
+        api.post<Task>('/tasks/self-assign', dto).then(r => r.data),
 };

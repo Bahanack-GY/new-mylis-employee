@@ -347,6 +347,21 @@
     "kanban": {
       "emptyColumn": "No tasks"
     },
+    "selfAssign": {
+      "badge": "Self-assigned",
+      "createButton": "New Task",
+      "modalTitle": "Create a Task",
+      "titleLabel": "Title",
+      "titlePlaceholder": "What needs to be done?",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Describe the task...",
+      "difficultyLabel": "Difficulty",
+      "dueDateLabel": "Due Date",
+      "startDateLabel": "Start Date",
+      "cancel": "Cancel",
+      "submit": "Create Task",
+      "assignedBy": "Assigned by manager"
+    },
     "dateFilter": {
       "all": "All",
       "today": "Today",
@@ -472,7 +487,9 @@
       "meeting": "Meeting",
       "document": "Document",
       "ticket": "Ticket",
-      "sanction": "Sanction"
+      "sanction": "Sanction",
+      "message": "Message",
+      "chat": "Mention"
     }
   },
   "messages": {

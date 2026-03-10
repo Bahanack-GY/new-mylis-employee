@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Bell,
@@ -13,6 +14,7 @@ import {
     Ticket,
     Clock,
     Loader2,
+    MessageSquare,
 } from 'lucide-react';
 
 import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '../api/notifications/hooks';
@@ -26,10 +28,13 @@ const TYPE_ICONS: Record<string, typeof Bell> = {
     meeting: CalendarDays,
     document: FileText,
     ticket: Ticket,
+    message: MessageSquare,
+    chat: MessageSquare,
 };
 
 const Notifications = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
 
@@ -168,7 +173,12 @@ const Notifications = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.03 }}
-                                onClick={() => !notification.read && markAsRead.mutate(notification.id)}
+                                onClick={() => {
+                                    if (!notification.read) markAsRead.mutate(notification.id);
+                                    if (notification.type === 'message' || notification.type === 'chat') {
+                                        navigate(notification.meta?.channelId ? `/messages?channel=${notification.meta.channelId}` : '/messages');
+                                    }
+                                }}
                                 className={`bg-white rounded-2xl border p-4 md:p-5 transition-all cursor-pointer hover:border-[#33cbcc]/30 ${
                                     notification.read ? 'border-gray-100' : 'border-[#33cbcc]/20 bg-[#33cbcc]/2'
                                 }`}
