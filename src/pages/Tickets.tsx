@@ -23,6 +23,7 @@ import {
 import { useMyTickets, useCreateTicket, useDepartmentTickets, useAcceptTicket } from '../api/tickets/hooks';
 import { useDepartments } from '../api/departments/hooks';
 import type { Ticket, CreateTicketDto, TicketPriority } from '../api/tickets/types';
+import { UserTicketsSkeleton } from '../components/Skeleton';
 
 /* ─── Display Types ──────────────────────────────────────── */
 
@@ -688,11 +689,7 @@ const Tickets = () => {
     ];
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#33cbcc]" />
-            </div>
-        );
+        return <UserTicketsSkeleton />;
     }
 
     return (

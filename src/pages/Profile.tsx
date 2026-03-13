@@ -26,9 +26,12 @@ import {
     Loader2,
     Trophy,
     Crown,
+    KeyRound,
+    EyeOff,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useUpdateProfile, useMyBadges } from '../api/auth/hooks';
+import { useUpdateProfile, useMyBadges, useChangePassword } from '../api/auth/hooks';
+import { UserProfileSkeleton } from '../components/Skeleton';
 import { documentsApi } from '../api/documents/api';
 import type { EducationDoc } from '../api/auth/types';
 import { useMyTasks } from '../api/tasks/hooks';
@@ -545,9 +548,17 @@ const EducationSection = ({
 const Profile = () => {
     const { t } = useTranslation();
     const [showEditModal, setShowEditModal] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+    const [showNewPwd, setShowNewPwd] = useState(false);
+    const [passwordSuccess, setPasswordSuccess] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
 
     const { user, isLoading } = useAuth();
     const updateProfile = useUpdateProfile();
+    const changePassword = useChangePassword();
     const { data: tasks } = useMyTasks();
     const { data: tickets } = useMyTickets();
     const { data: meetings } = useMeetings();
@@ -579,11 +590,7 @@ const Profile = () => {
     };
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#33cbcc]" />
-            </div>
-        );
+        return <UserProfileSkeleton />;
     }
 
     const stats = [
@@ -961,6 +968,81 @@ const Profile = () => {
                         onUpdate={(docs) => updateProfile.mutate({ educationDocs: docs })}
                         isSaving={updateProfile.isPending}
                     />
+
+                    {/* Change Password */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6"
+                    >
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-7 h-7 rounded-lg bg-[#283852]/10 flex items-center justify-center">
+                                <KeyRound size={14} className="text-[#283852]" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-gray-700">{t('profile.changePassword.title')}</h3>
+                        </div>
+                        <div className="space-y-3 max-w-sm">
+                            {/* Current password */}
+                            <div className="relative">
+                                <input
+                                    type={showCurrentPwd ? 'text' : 'password'}
+                                    value={currentPassword}
+                                    onChange={e => { setCurrentPassword(e.target.value); setPasswordError(''); setPasswordSuccess(false); }}
+                                    placeholder={t('profile.changePassword.currentPlaceholder')}
+                                    className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#33cbcc] focus:ring-1 focus:ring-[#33cbcc]/20"
+                                />
+                                <button type="button" onClick={() => setShowCurrentPwd(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    {showCurrentPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                                </button>
+                            </div>
+                            {/* New password */}
+                            <div className="relative">
+                                <input
+                                    type={showNewPwd ? 'text' : 'password'}
+                                    value={newPassword}
+                                    onChange={e => { setNewPassword(e.target.value); setPasswordError(''); setPasswordSuccess(false); }}
+                                    placeholder={t('profile.changePassword.newPlaceholder')}
+                                    className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#33cbcc] focus:ring-1 focus:ring-[#33cbcc]/20"
+                                />
+                                <button type="button" onClick={() => setShowNewPwd(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    {showNewPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                                </button>
+                            </div>
+                            {/* Confirm password */}
+                            <input
+                                type="password"
+                                value={confirmPassword}
+                                onChange={e => { setConfirmPassword(e.target.value); setPasswordError(''); setPasswordSuccess(false); }}
+                                placeholder={t('profile.changePassword.confirmPlaceholder')}
+                                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#33cbcc] focus:ring-1 focus:ring-[#33cbcc]/20"
+                            />
+                            {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
+                            {passwordSuccess && <p className="text-xs text-green-500">{t('profile.changePassword.success')}</p>}
+                            <button
+                                disabled={!currentPassword || newPassword.length < 6 || newPassword !== confirmPassword || changePassword.isPending}
+                                onClick={() => {
+                                    if (newPassword !== confirmPassword) {
+                                        setPasswordError(t('profile.changePassword.mismatch'));
+                                        return;
+                                    }
+                                    changePassword.mutate({ currentPassword, newPassword }, {
+                                        onSuccess: () => {
+                                            setPasswordSuccess(true);
+                                            setCurrentPassword('');
+                                            setNewPassword('');
+                                            setConfirmPassword('');
+                                        },
+                                        onError: () => setPasswordError(t('profile.changePassword.error')),
+                                    });
+                                }}
+                                className="px-4 py-2 text-xs font-semibold bg-[#283852] text-white rounded-xl hover:bg-[#283852]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+                            >
+                                {changePassword.isPending ? <Loader2 size={13} className="animate-spin" /> : <KeyRound size={13} />}
+                                {t('profile.changePassword.submit')}
+                            </button>
+                        </div>
+                    </motion.div>
                 </div>
             </div>
 

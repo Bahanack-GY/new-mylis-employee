@@ -13,4 +13,13 @@ export const tasksApi = {
 
     selfAssign: (dto: SelfAssignTaskDto) =>
         api.post<Task>('/tasks/self-assign', dto).then(r => r.data),
+
+    updateTask: (id: string, dto: Partial<SelfAssignTaskDto>) =>
+        api.patch(`/tasks/${id}`, dto).then(r => r.data),
+
+    deleteTask: (id: string) =>
+        api.delete(`/tasks/${id}`).then(r => r.data),
+
+    getHistory: (id: string) =>
+        api.get(`/tasks/${id}/history`).then(r => r.data),
 };

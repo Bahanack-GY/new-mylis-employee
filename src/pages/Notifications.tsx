@@ -13,11 +13,11 @@ import {
     FileText,
     Ticket,
     Clock,
-    Loader2,
     MessageSquare,
 } from 'lucide-react';
 
 import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '../api/notifications/hooks';
+import { UserNotificationsSkeleton } from '../components/Skeleton';
 
 /* ─── Component ─────────────────────────────────────────── */
 
@@ -79,11 +79,7 @@ const Notifications = () => {
     ];
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#33cbcc]" />
-            </div>
-        );
+        return <UserNotificationsSkeleton />;
     }
 
     return (

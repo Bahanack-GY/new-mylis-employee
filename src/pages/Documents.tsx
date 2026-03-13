@@ -19,6 +19,7 @@ import {
 import { useDocuments, useCreateDocument, useStorageInfo } from '../api/documents/hooks';
 import { documentsApi } from '../api/documents/api';
 import type { Document as DocType } from '../api/documents/types';
+import { UserDocumentsSkeleton } from '../components/Skeleton';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -299,11 +300,7 @@ const Documents = () => {
 
     /* Loading */
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#33cbcc]" />
-            </div>
-        );
+        return <UserDocumentsSkeleton />;
     }
 
     /* Filtered documents */

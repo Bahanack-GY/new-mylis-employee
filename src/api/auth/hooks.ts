@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { authApi } from './api';
 import type { LoginDto, RegisterDto, UpdateProfileDto } from './types';
 
@@ -32,19 +33,26 @@ export const useLogin = () => {
             qc.invalidateQueries({ queryKey: authKeys.profile });
             navigate('/dashboard');
         },
+        onError: () => toast.error('Identifiants incorrects'),
     });
 };
 
 export const useRegister = () =>
-    useMutation({ mutationFn: (dto: RegisterDto) => authApi.register(dto) });
+    useMutation({
+        mutationFn: (dto: RegisterDto) => authApi.register(dto),
+        onSuccess: () => toast.success('Compte créé'),
+        onError: () => toast.error('Erreur lors de l\'inscription'),
+    });
 
 export const useUpdateProfile = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (dto: UpdateProfileDto) => authApi.updateProfile(dto),
         onSuccess: () => {
+            toast.success('Profil mis à jour');
             qc.invalidateQueries({ queryKey: authKeys.profile });
         },
+        onError: () => toast.error('Une erreur est survenue'),
     });
 };
 
@@ -52,6 +60,14 @@ export const useMyBadges = () =>
     useQuery({
         queryKey: authKeys.badges,
         queryFn: authApi.getMyBadges,
+    });
+
+export const useChangePassword = () =>
+    useMutation({
+        mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
+            authApi.changePassword(currentPassword, newPassword),
+        onSuccess: () => toast.success('Mot de passe modifié'),
+        onError: () => toast.error('Échec du changement de mot de passe'),
     });
 
 export const useLogout = () => {

@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './api/queryClient'
+import { Toaster } from 'sonner'
 import { AuthProvider } from './contexts/AuthContext'
 import { SocketProvider } from './contexts/SocketContext'
 
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <SocketProvider>
             <App />
+            <Toaster richColors position="top-right" duration={3000} />
           </SocketProvider>
         </AuthProvider>
       </QueryClientProvider>

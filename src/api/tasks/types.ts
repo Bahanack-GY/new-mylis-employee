@@ -14,6 +14,8 @@ export interface Task {
     endTime?: string;
     blockReason?: string;
     selfAssigned?: boolean;
+    startedAt?: string | null;
+    completedAt?: string | null;
     assignedToId: string;
     assignedToTeamId: string;
     projectId: string;
@@ -29,6 +31,8 @@ export interface SelfAssignTaskDto {
     dueDate?: string;
     startDate?: string;
     endDate?: string;
+    startTime?: string;
+    projectId?: string;
 }
 
 export interface GamificationResult {

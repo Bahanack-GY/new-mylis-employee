@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { ticketsApi } from './api';
 import { taskKeys } from '../tasks/hooks';
 import type { CreateTicketDto } from './types';
@@ -25,7 +26,11 @@ export const useCreateTicket = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (dto: CreateTicketDto) => ticketsApi.create(dto),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ticketKeys.all }),
+        onSuccess: () => {
+            toast.success('Ticket créé avec succès');
+            qc.invalidateQueries({ queryKey: ticketKeys.all });
+        },
+        onError: () => toast.error('Une erreur est survenue'),
     });
 };
 
@@ -34,9 +39,11 @@ export const useAcceptTicket = () => {
     return useMutation({
         mutationFn: (ticketId: string) => ticketsApi.accept(ticketId),
         onSuccess: () => {
+            toast.success('Ticket accepté');
             qc.invalidateQueries({ queryKey: ticketKeys.department });
             qc.invalidateQueries({ queryKey: ticketKeys.myTickets });
             qc.invalidateQueries({ queryKey: taskKeys.myTasks });
         },
+        onError: () => toast.error('Une erreur est survenue'),
     });
 };

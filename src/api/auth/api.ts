@@ -19,4 +19,7 @@ export const authApi = {
 
     markFirstLoginDone: () =>
         api.patch('/auth/first-login-done').then(r => r.data),
+
+    changePassword: (currentPassword: string, newPassword: string) =>
+        api.patch('/auth/change-password', { currentPassword, newPassword }).then(r => r.data),
 };

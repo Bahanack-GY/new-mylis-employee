@@ -16,6 +16,10 @@ import {
     CalendarDays,
     Plus,
     Zap,
+    Pencil,
+    Trash2,
+    History,
+    Save,
 } from 'lucide-react';
 import {
     DndContext,
@@ -31,10 +35,12 @@ import {
     type DragEndEvent,
     type DragOverEvent,
 } from '@dnd-kit/core';
-import { useMyTasks, useUpdateTaskState, useSelfAssignTask } from '../api/tasks/hooks';
+import { useMyTasks, useUpdateTaskState, useSelfAssignTask, useUpdateTask, useDeleteTask, useTaskHistory } from '../api/tasks/hooks';
 import type { Task, TaskState, TaskDifficulty, GamificationResult } from '../api/tasks/types';
+import { useMyProjects } from '../api/projects/hooks';
 import PointsEarnedModal from '../components/PointsEarnedModal';
 import BadgeEarnedModal from '../components/BadgeEarnedModal';
+import { UserTasksSkeleton } from '../components/Skeleton';
 
 /* ─── Types ─────────────────────────────────────────────── */
 
@@ -51,10 +57,13 @@ interface MappedTask {
     startDate: string;
     endDate: string;
     dueDate: string;
+    startTime: string;
     projectName: string;
     projectId: string;
     blockReason: string;
     selfAssigned: boolean;
+    startedAt: string | null;
+    completedAt: string | null;
 }
 
 /* ─── State mapping ──────────────────────────────────────── */
@@ -178,9 +187,13 @@ const getDifficultyBorder = (difficulty: TaskDifficulty) => {
 const KanbanCard = ({
     task,
     onClick,
+    onEdit,
+    onDelete,
 }: {
     task: MappedTask;
     onClick: () => void;
+    onEdit?: () => void;
+    onDelete?: () => void;
 }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: task.id,
@@ -207,11 +220,31 @@ const KanbanCard = ({
                     <h3 className="text-sm font-bold text-gray-800 truncate group-hover:text-[#283852] transition-colors">
                         {task.title}
                     </h3>
-                    {task.selfAssigned && (
-                        <span className="shrink-0 flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[#33cbcc]/10 text-[#33cbcc]">
-                            <Zap size={9} />
-                        </span>
-                    )}
+                    <div className="flex items-center gap-1 shrink-0">
+                        {task.selfAssigned && (
+                            <span className="flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[#33cbcc]/10 text-[#33cbcc]">
+                                <Zap size={9} />
+                            </span>
+                        )}
+                        {task.selfAssigned && onEdit && (
+                            <button
+                                onPointerDown={e => e.stopPropagation()}
+                                onClick={e => { e.stopPropagation(); onEdit(); }}
+                                className="p-1 rounded hover:bg-[#33cbcc]/10 text-gray-300 hover:text-[#33cbcc] transition-colors"
+                            >
+                                <Pencil size={11} />
+                            </button>
+                        )}
+                        {task.selfAssigned && onDelete && (
+                            <button
+                                onPointerDown={e => e.stopPropagation()}
+                                onClick={e => { e.stopPropagation(); onDelete(); }}
+                                className="p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors"
+                            >
+                                <Trash2 size={11} />
+                            </button>
+                        )}
+                    </div>
                 </div>
                 {task.projectName && (
                     <p className="text-xs text-gray-400 mt-0.5 truncate">{task.projectName}</p>
@@ -257,6 +290,8 @@ const KanbanColumn = ({
     canDrop,
     isDragging,
     onTaskClick,
+    onEditTask,
+    onDeleteTask,
 }: {
     status: MappedStatus;
     tasks: MappedTask[];
@@ -264,6 +299,8 @@ const KanbanColumn = ({
     canDrop: boolean;
     isDragging: boolean;
     onTaskClick: (task: MappedTask) => void;
+    onEditTask?: (task: MappedTask) => void;
+    onDeleteTask?: (task: MappedTask) => void;
 }) => {
     const { t } = useTranslation();
     const { setNodeRef } = useDroppable({ id: status });
@@ -310,6 +347,8 @@ const KanbanColumn = ({
                             key={task.id}
                             task={task}
                             onClick={() => onTaskClick(task)}
+                            onEdit={onEditTask ? () => onEditTask(task) : undefined}
+                            onDelete={onDeleteTask ? () => onDeleteTask(task) : undefined}
                         />
                     ))
                 )}
@@ -333,12 +372,18 @@ const TaskDetailModal = ({
     onUpdateState,
     onBlockTask,
     isUpdating,
+    onEdit,
+    onDelete,
+    onHistory,
 }: {
     task: MappedTask;
     onClose: () => void;
     onUpdateState: (taskId: string, state: TaskState) => void;
     onBlockTask: (taskId: string, reason: string) => void;
     isUpdating: boolean;
+    onEdit?: () => void;
+    onDelete?: () => void;
+    onHistory?: () => void;
 }) => {
     const { t } = useTranslation();
     const nextState = NEXT_STATE[task.state];
@@ -456,6 +501,24 @@ const TaskDetailModal = ({
                         </div>
                     </div>
 
+                    {/* Timestamps */}
+                    {(task.startedAt || task.completedAt) && (
+                        <div className="grid grid-cols-2 gap-3">
+                            {task.startedAt && (
+                                <div className="bg-blue-50 rounded-xl p-3">
+                                    <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider mb-1">{t('tasks.detail.startedAt')}</p>
+                                    <p className="text-sm font-semibold text-gray-800">{new Date(task.startedAt).toLocaleString()}</p>
+                                </div>
+                            )}
+                            {task.completedAt && (
+                                <div className="bg-green-50 rounded-xl p-3">
+                                    <p className="text-[10px] font-semibold text-green-500 uppercase tracking-wider mb-1">{t('tasks.detail.completedAt')}</p>
+                                    <p className="text-sm font-semibold text-gray-800">{new Date(task.completedAt).toLocaleString()}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Block reason display */}
                     {task.state === 'BLOCKED' && task.blockReason && (
                         <div className="bg-red-50 border border-red-100 rounded-xl p-3">
@@ -520,7 +583,34 @@ const TaskDetailModal = ({
                 </div>
 
                 {!showBlockForm && (
-                    <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+                    <div className="px-6 py-4 border-t border-gray-100 flex flex-wrap justify-end gap-2">
+                        {task.selfAssigned && onEdit && (
+                            <button
+                                onClick={() => { onClose(); onEdit(); }}
+                                className="px-4 py-2 rounded-xl text-sm font-medium text-[#33cbcc] bg-[#33cbcc]/10 hover:bg-[#33cbcc]/20 transition-colors flex items-center gap-1.5"
+                            >
+                                <Pencil size={13} />
+                                {t('tasks.actions.edit')}
+                            </button>
+                        )}
+                        {task.selfAssigned && onDelete && (
+                            <button
+                                onClick={() => { onClose(); onDelete(); }}
+                                className="px-4 py-2 rounded-xl text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors flex items-center gap-1.5"
+                            >
+                                <Trash2 size={13} />
+                                {t('tasks.actions.delete')}
+                            </button>
+                        )}
+                        {onHistory && (
+                            <button
+                                onClick={() => { onClose(); onHistory(); }}
+                                className="px-4 py-2 rounded-xl text-sm font-medium text-[#283852] bg-[#283852]/10 hover:bg-[#283852]/20 transition-colors flex items-center gap-1.5"
+                            >
+                                <History size={13} />
+                                {t('tasks.actions.history')}
+                            </button>
+                        )}
                         <button onClick={onClose} className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
                             {t('tasks.detail.close')}
                         </button>
@@ -558,6 +648,234 @@ const TaskDetailModal = ({
     );
 };
 
+/* ─── Edit Self-Assigned Task Modal ─────────────────────── */
+
+const EditSelfTaskModal = ({
+    task,
+    onClose,
+    onSave,
+    isSaving,
+}: {
+    task: MappedTask;
+    onClose: () => void;
+    onSave: (dto: any) => void;
+    isSaving: boolean;
+}) => {
+    const { t } = useTranslation();
+    const { data: projects } = useMyProjects();
+    const [form, setForm] = useState({
+        title: task.title,
+        description: task.description,
+        difficulty: task.difficulty as string,
+        endDate: task.endDate ? task.endDate.split('T')[0] : '',
+        startDate: task.startDate ? task.startDate.split('T')[0] : '',
+        startTime: task.startTime || '',
+        projectId: task.projectId || '',
+    });
+
+    const inputCls = 'w-full bg-white rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/30 focus:border-[#33cbcc] transition-all';
+    const difficultyColors: Record<string, string> = {
+        EASY: 'border-[#33cbcc] bg-[#33cbcc]/10 text-[#33cbcc]',
+        MEDIUM: 'border-[#283852] bg-[#283852]/10 text-[#283852]',
+        HARD: 'border-red-400 bg-red-50 text-red-500',
+    };
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handler);
+        document.body.style.overflow = 'hidden';
+        return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
+    }, [onClose]);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#33cbcc]/10 flex items-center justify-center">
+                            <Pencil size={18} className="text-[#33cbcc]" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-800">{t('tasks.edit.modalTitle')}</h3>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"><X size={18} /></button>
+                </div>
+                <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+                    <div>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{t('tasks.selfAssign.titleLabel')}</label>
+                        <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className={inputCls} />
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">{t('tasks.selfAssign.descriptionLabel')}</label>
+                        <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} className={`${inputCls} resize-none`} />
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('tasks.selfAssign.difficultyLabel')}</label>
+                        <div className="flex gap-2">
+                            {(['EASY', 'MEDIUM', 'HARD'] as const).map(d => (
+                                <button key={d} type="button" onClick={() => setForm(f => ({ ...f, difficulty: d }))}
+                                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${form.difficulty === d ? difficultyColors[d] : 'border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200'}`}>
+                                    {d}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5"><Briefcase size={10} />{t('tasks.selfAssign.projectLabel')}</label>
+                        <select value={form.projectId} onChange={e => setForm(f => ({ ...f, projectId: e.target.value }))}
+                            className={`${inputCls} appearance-none cursor-pointer`}>
+                            <option value="">{t('tasks.selfAssign.projectNone')}</option>
+                            {(projects || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                        <div>
+                            <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5"><Calendar size={10} />{t('tasks.selfAssign.startDateLabel')}</label>
+                            <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={inputCls} />
+                        </div>
+                        <div>
+                            <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5"><Calendar size={10} />{t('tasks.selfAssign.endDateLabel')}</label>
+                            <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={inputCls} />
+                        </div>
+                        <div>
+                            <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5"><Clock size={10} />{t('tasks.selfAssign.timeLabel')}</label>
+                            <input type="time" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} className={inputCls} />
+                        </div>
+                    </div>
+                </div>
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">{t('tasks.selfAssign.cancel')}</button>
+                    <button
+                        onClick={() => onSave({ title: form.title, description: form.description || undefined, difficulty: form.difficulty, projectId: form.projectId || undefined, startDate: form.startDate || undefined, endDate: form.endDate || undefined, startTime: form.startTime || undefined })}
+                        disabled={!form.title.trim() || isSaving}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors ${form.title.trim() ? 'bg-[#33cbcc] hover:bg-[#2bb5b6]' : 'bg-gray-300 cursor-not-allowed'}`}
+                    >
+                        {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                        {t('tasks.edit.save')}
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
+
+/* ─── Confirm Delete Modal ────────────────────────────────── */
+
+const ConfirmDeleteModal = ({ onClose, onConfirm, isDeleting }: { onClose: () => void; onConfirm: () => void; isDeleting: boolean }) => {
+    const { t } = useTranslation();
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose]);
+    return (
+        <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+                        <Trash2 size={20} className="text-red-500" />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-800">{t('tasks.delete.confirmTitle')}</h3>
+                </div>
+                <p className="text-sm text-gray-500">{t('tasks.delete.confirmBody')}</p>
+                <div className="flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">{t('tasks.block.cancel')}</button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={isDeleting}
+                        className="px-4 py-2 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-2"
+                    >
+                        {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                        {t('tasks.delete.confirm')}
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
+
+/* ─── Task History Modal ──────────────────────────────────── */
+
+const TaskHistoryModal = ({ taskId, onClose }: { taskId: string; onClose: () => void }) => {
+    const { t } = useTranslation();
+    const { data: history = [], isLoading } = useTaskHistory(taskId);
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handler);
+        document.body.style.overflow = 'hidden';
+        return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
+    }, [onClose]);
+    return (
+        <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#283852]/10 flex items-center justify-center">
+                            <History size={18} className="text-[#283852]" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-800">{t('tasks.history.title')}</h3>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"><X size={18} /></button>
+                </div>
+                <div className="px-6 py-5 max-h-[60vh] overflow-y-auto">
+                    {isLoading ? (
+                        <div className="flex justify-center py-8"><Loader2 size={24} className="animate-spin text-[#33cbcc]" /></div>
+                    ) : (history as any[]).length === 0 ? (
+                        <p className="text-center text-sm text-gray-400 py-8">{t('tasks.history.empty')}</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {(history as any[]).map((entry: any) => (
+                                <div key={entry.id} className="bg-gray-50 rounded-xl p-4 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-[#283852]">{entry.changedByName}</span>
+                                        <span className="text-[11px] text-gray-400">{new Date(entry.createdAt).toLocaleString()}</span>
+                                    </div>
+                                    <div className="space-y-1">
+                                        {Object.entries(entry.changes).map(([field, change]: [string, any]) => (
+                                            <div key={field} className="text-[11px] text-gray-600">
+                                                <span className="font-medium text-gray-700 capitalize">{field}:</span>{' '}
+                                                <span className="line-through text-gray-400">{String(change.from ?? '—')}</span>
+                                                {' → '}
+                                                <span className="text-[#33cbcc] font-medium">{String(change.to ?? '—')}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
+
 /* ─── Self-Assign Modal ──────────────────────────────────── */
 
 const DIFFICULTY_OPTIONS: TaskDifficulty[] = ['EASY', 'MEDIUM', 'HARD'];
@@ -565,13 +883,16 @@ const DIFFICULTY_OPTIONS: TaskDifficulty[] = ['EASY', 'MEDIUM', 'HARD'];
 const SelfAssignModal = ({ onClose }: { onClose: () => void }) => {
     const { t } = useTranslation();
     const selfAssign = useSelfAssignTask();
+    const { data: projects } = useMyProjects();
 
     const [form, setForm] = useState({
         title: '',
         description: '',
         difficulty: 'MEDIUM' as TaskDifficulty,
+        projectId: '',
         startDate: '',
-        dueDate: '',
+        endDate: '',
+        startTime: '',
     });
 
     useEffect(() => {
@@ -584,7 +905,7 @@ const SelfAssignModal = ({ onClose }: { onClose: () => void }) => {
     const update = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
         setForm(prev => ({ ...prev, [key]: value }));
 
-    const isValid = form.title.trim().length > 0;
+    const isValid = form.title.trim().length > 0 && form.projectId.trim().length > 0;
 
     const difficultyColors: Record<TaskDifficulty, string> = {
         EASY: 'border-[#33cbcc] bg-[#33cbcc]/10 text-[#33cbcc]',
@@ -675,8 +996,27 @@ const SelfAssignModal = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     </div>
 
-                    {/* Start date + Due date */}
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Project */}
+                    <div>
+                        <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                            <Briefcase size={10} />
+                            {t('tasks.selfAssign.projectLabel')}
+                            <span className="text-red-400 ml-0.5">*</span>
+                        </label>
+                        <select
+                            value={form.projectId}
+                            onChange={e => update('projectId', e.target.value)}
+                            className={`w-full bg-white rounded-xl border px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/30 focus:border-[#33cbcc] transition-all appearance-none cursor-pointer ${!form.projectId ? 'border-red-200' : 'border-gray-200'}`}
+                        >
+                            <option value="">{t('tasks.selfAssign.projectNone')}</option>
+                            {(projects || []).map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Start date + End date + Time */}
+                    <div className="grid grid-cols-3 gap-3">
                         <div>
                             <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                                 <Calendar size={10} />
@@ -692,16 +1032,29 @@ const SelfAssignModal = ({ onClose }: { onClose: () => void }) => {
                         <div>
                             <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                                 <Calendar size={10} />
-                                {t('tasks.selfAssign.dueDateLabel')}
+                                {t('tasks.selfAssign.endDateLabel')}
                             </label>
                             <input
                                 type="date"
-                                value={form.dueDate}
-                                onChange={e => update('dueDate', e.target.value)}
+                                value={form.endDate}
+                                onChange={e => update('endDate', e.target.value)}
+                                className="w-full bg-white rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/30 focus:border-[#33cbcc] transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                                <Clock size={10} />
+                                {t('tasks.selfAssign.timeLabel')}
+                            </label>
+                            <input
+                                type="time"
+                                value={form.startTime}
+                                onChange={e => update('startTime', e.target.value)}
                                 className="w-full bg-white rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#33cbcc]/30 focus:border-[#33cbcc] transition-all"
                             />
                         </div>
                     </div>
+
                 </div>
 
                 {/* Footer */}
@@ -719,8 +1072,11 @@ const SelfAssignModal = ({ onClose }: { onClose: () => void }) => {
                                 title: form.title,
                                 description: form.description || undefined,
                                 difficulty: form.difficulty,
+                                projectId: form.projectId || undefined,
                                 startDate: form.startDate || undefined,
-                                dueDate: form.dueDate || undefined,
+                                endDate: form.endDate || undefined,
+                                dueDate: form.endDate || undefined,
+                                startTime: form.startTime || undefined,
                             }, { onSuccess: () => onClose() });
                         }}
                         disabled={!isValid || selfAssign.isPending}
@@ -757,10 +1113,15 @@ const Tasks = () => {
     const [gamificationData, setGamificationData] = useState<GamificationResult | null>(null);
     const [showPointsModal, setShowPointsModal] = useState(false);
     const [showBadgeModal, setShowBadgeModal] = useState(false);
+    const [editingTask, setEditingTask] = useState<MappedTask | null>(null);
+    const [historyTaskId, setHistoryTaskId] = useState<string | null>(null);
+    const [confirmDeleteTaskId, setConfirmDeleteTaskId] = useState<string | null>(null);
 
     /* ── API data ── */
     const { data: apiTasks, isLoading } = useMyTasks();
     const updateTaskState = useUpdateTaskState();
+    const updateTask = useUpdateTask();
+    const deleteTask = useDeleteTask();
 
     /* ── Sensors ── */
     const sensors = useSensors(
@@ -781,10 +1142,13 @@ const Tasks = () => {
                 startDate: t.startDate || '',
                 endDate: t.endDate || '',
                 dueDate: t.dueDate || '',
+                startTime: t.startTime || '',
                 projectName: t.project?.name || '',
                 projectId: t.projectId || '',
                 blockReason: t.blockReason || '',
                 selfAssigned: t.selfAssigned || false,
+                startedAt: t.startedAt || null,
+                completedAt: t.completedAt || null,
             })),
         [apiTasks],
     );
@@ -866,11 +1230,7 @@ const Tasks = () => {
 
     /* ── Loading state ── */
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#33cbcc]" />
-            </div>
-        );
+        return <UserTasksSkeleton />;
     }
 
     /* ── Stats ── */
@@ -1053,6 +1413,8 @@ const Tasks = () => {
                             canDrop={activeDragTask ? canTransition(activeDragTask.status, status) : false}
                             isDragging={!!activeDragTask}
                             onTaskClick={(task) => setSelectedTask(task)}
+                            onEditTask={(task) => task.selfAssigned ? setEditingTask(task) : undefined}
+                            onDeleteTask={(task) => task.selfAssigned ? setConfirmDeleteTaskId(task.id) : undefined}
                         />
                     ))}
                 </div>
@@ -1089,6 +1451,46 @@ const Tasks = () => {
                                 { onSuccess: () => setSelectedTask(null) },
                             );
                         }}
+                        onEdit={selectedTask.selfAssigned ? () => setEditingTask(selectedTask) : undefined}
+                        onDelete={selectedTask.selfAssigned ? () => setConfirmDeleteTaskId(selectedTask.id) : undefined}
+                        onHistory={() => setHistoryTaskId(selectedTask.id)}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* ═══ Edit Task Modal ═══ */}
+            <AnimatePresence>
+                {editingTask && (
+                    <EditSelfTaskModal
+                        task={editingTask}
+                        onClose={() => setEditingTask(null)}
+                        isSaving={updateTask.isPending}
+                        onSave={(dto) => {
+                            updateTask.mutate({ id: editingTask.id, dto }, { onSuccess: () => setEditingTask(null) });
+                        }}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* ═══ Confirm Delete ═══ */}
+            <AnimatePresence>
+                {confirmDeleteTaskId && (
+                    <ConfirmDeleteModal
+                        onClose={() => setConfirmDeleteTaskId(null)}
+                        isDeleting={deleteTask.isPending}
+                        onConfirm={() => {
+                            deleteTask.mutate(confirmDeleteTaskId, { onSuccess: () => setConfirmDeleteTaskId(null) });
+                        }}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* ═══ History Modal ═══ */}
+            <AnimatePresence>
+                {historyTaskId && (
+                    <TaskHistoryModal
+                        taskId={historyTaskId}
+                        onClose={() => setHistoryTaskId(null)}
                     />
                 )}
             </AnimatePresence>

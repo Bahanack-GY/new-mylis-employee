@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useMyProjects, useMyProjectDetail } from '../api/projects/hooks';
 import type { Project as ApiProject } from '../api/projects/types';
+import { UserProjectsSkeleton } from '../components/Skeleton';
 
 /* ─── Types ─────────────────────────────────────────────── */
 
@@ -413,11 +414,7 @@ const Projects = () => {
 
     /* ── Loading state ── */
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#33cbcc]" />
-            </div>
-        );
+        return <UserProjectsSkeleton />;
     }
 
     /* ── Filtering ── */

@@ -127,6 +127,16 @@
     "recentActivity": {
       "title": "Recent Activity",
       "empty": "No recent activity to display."
+    },
+    "changePassword": {
+      "title": "Change Password",
+      "currentPlaceholder": "Current password",
+      "newPlaceholder": "New password (min. 6 characters)",
+      "confirmPlaceholder": "Confirm new password",
+      "submit": "Update Password",
+      "success": "Password updated successfully.",
+      "mismatch": "Passwords do not match.",
+      "error": "Current password is incorrect."
     }
   },
   "tickets": {
@@ -327,13 +337,18 @@
       "assignee": "Assigned to",
       "close": "Close",
       "day": "day",
-      "days": "days"
+      "days": "days",
+      "startedAt": "Started At",
+      "completedAt": "Completed At"
     },
     "actions": {
       "startProgress": "Start Progress",
       "markCompleted": "Mark as Completed",
       "markBlocked": "Mark as Blocked",
-      "resumeProgress": "Resume Progress"
+      "resumeProgress": "Resume Progress",
+      "edit": "Edit",
+      "delete": "Delete",
+      "history": "History"
     },
     "block": {
       "title": "Block Task",
@@ -356,8 +371,12 @@
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Describe the task...",
       "difficultyLabel": "Difficulty",
-      "dueDateLabel": "Due Date",
+      "projectLabel": "Project",
+      "projectNone": "No project",
       "startDateLabel": "Start Date",
+      "endDateLabel": "End Date",
+      "dueDateLabel": "Due Date",
+      "timeLabel": "Time",
       "cancel": "Cancel",
       "submit": "Create Task",
       "assignedBy": "Assigned by manager"
@@ -368,6 +387,19 @@
       "thisWeek": "This Week",
       "thisMonth": "This Month",
       "custom": "Custom"
+    },
+    "edit": {
+      "modalTitle": "Edit Task",
+      "save": "Save Changes"
+    },
+    "delete": {
+      "confirmTitle": "Delete Task",
+      "confirmBody": "Are you sure you want to delete this task? This action cannot be undone.",
+      "confirm": "Delete"
+    },
+    "history": {
+      "title": "Edit History",
+      "empty": "No edit history yet."
     }
   },
   "projects": {

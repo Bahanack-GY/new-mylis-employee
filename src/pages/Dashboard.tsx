@@ -4,7 +4,6 @@ import {
     Ticket,
     Calendar,
     GraduationCap,
-    Loader2,
     Clock,
     Trophy,
     Crown,
@@ -17,6 +16,7 @@ import { useMyTickets } from '../api/tickets/hooks';
 import { useMeetings } from '../api/meetings/hooks';
 import { useFormations } from '../api/formations/hooks';
 import { useLeaderboard } from '../api/employees/hooks';
+import { UserDashboardSkeleton } from '../components/Skeleton';
 
 const getTaskStatusStyle = (state: string) => {
     const lower = state.toLowerCase();
@@ -96,11 +96,7 @@ const Dashboard = () => {
         .slice(0, 5);
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#33cbcc]" />
-            </div>
-        );
+        return <UserDashboardSkeleton />;
     }
 
     return (

@@ -127,6 +127,16 @@
     "recentActivity": {
       "title": "Activité récente",
       "empty": "Aucune activité récente à afficher."
+    },
+    "changePassword": {
+      "title": "Changer le mot de passe",
+      "currentPlaceholder": "Mot de passe actuel",
+      "newPlaceholder": "Nouveau mot de passe (min. 6 caractères)",
+      "confirmPlaceholder": "Confirmer le nouveau mot de passe",
+      "submit": "Mettre à jour le mot de passe",
+      "success": "Mot de passe mis à jour avec succès.",
+      "mismatch": "Les mots de passe ne correspondent pas.",
+      "error": "Le mot de passe actuel est incorrect."
     }
   },
   "tickets": {
@@ -327,13 +337,18 @@
       "assignee": "Assignée à",
       "close": "Fermer",
       "day": "jour",
-      "days": "jours"
+      "days": "jours",
+      "startedAt": "Démarré le",
+      "completedAt": "Terminé le"
     },
     "actions": {
       "startProgress": "Démarrer",
       "markCompleted": "Marquer comme terminée",
       "markBlocked": "Marquer comme bloquée",
-      "resumeProgress": "Reprendre"
+      "resumeProgress": "Reprendre",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "history": "Historique"
     },
     "block": {
       "title": "Bloquer la tâche",
@@ -356,8 +371,12 @@
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Décrivez la tâche...",
       "difficultyLabel": "Difficulté",
-      "dueDateLabel": "Date d'échéance",
+      "projectLabel": "Projet",
+      "projectNone": "Aucun projet",
       "startDateLabel": "Date de début",
+      "endDateLabel": "Date de fin",
+      "dueDateLabel": "Date d'échéance",
+      "timeLabel": "Heure",
       "cancel": "Annuler",
       "submit": "Créer la tâche",
       "assignedBy": "Assignée par le manager"
@@ -368,6 +387,19 @@
       "thisWeek": "Cette semaine",
       "thisMonth": "Ce mois",
       "custom": "Personnalisé"
+    },
+    "edit": {
+      "modalTitle": "Modifier la tâche",
+      "save": "Enregistrer"
+    },
+    "delete": {
+      "confirmTitle": "Supprimer la tâche",
+      "confirmBody": "Êtes-vous sûr de vouloir supprimer cette tâche ? Cette action est irréversible.",
+      "confirm": "Supprimer"
+    },
+    "history": {
+      "title": "Historique des modifications",
+      "empty": "Aucune modification enregistrée."
     }
   },
   "projects": {

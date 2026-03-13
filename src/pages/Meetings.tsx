@@ -19,10 +19,10 @@ import {
     ArrowRight,
     CalendarDays,
     User,
-    Loader2,
 } from 'lucide-react';
 import { useMeetings } from '../api/meetings/hooks';
 import type { Meeting } from '../api/meetings/types';
+import { UserMeetingsSkeleton } from '../components/Skeleton';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -297,11 +297,7 @@ const Meetings = () => {
 
     /* Loading */
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#33cbcc]" />
-            </div>
-        );
+        return <UserMeetingsSkeleton />;
     }
 
     /* Filtered meetings */
